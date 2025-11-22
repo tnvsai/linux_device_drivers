@@ -1,7 +1,7 @@
 CC := gcc
 CFLAGS := -Wall -O2
 
-all: test_char
+all: test_sai_char
 
 test_char: test_char.c
 	$(CC) $(CFLAGS) -o $@ $<

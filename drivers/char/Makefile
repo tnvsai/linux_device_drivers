@@ -1,4 +1,4 @@
-obj-m += char.o
+obj-m += sai_char.o
 
 KDIR := /lib/modules/$(shell uname -r)/build
 PWD := $(shell pwd)
