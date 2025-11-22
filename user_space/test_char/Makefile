@@ -3,8 +3,8 @@ CFLAGS := -Wall -O2
 
 all: test_sai_char
 
-test_char: test_char.c
+test_char: test_sai_char.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 clean:
-	rm -f test_char
+	rm -f test_sai_char
