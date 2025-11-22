@@ -1,7 +1,18 @@
+# Kernel build artifacts
 *.ko
 *.o
 *.mod.c
 *.order
 *.symvers
 *.cmd
-	
+*.d
+.tmp_versions/
+
+# Editor / IDE
+*~
+*.swp
+.vscode/
+.idea/
+
+# Userspace binaries
+userspace/**/test_sai_char
