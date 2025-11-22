@@ -14,6 +14,8 @@ static struct cdev sai_cdev;
 
 static struct class *sai_class;
 static struct device *sai_device;
+static DEFINE_MUTEX(sai_mutex);
+
 
 
 /* OPEN */
@@ -36,6 +38,9 @@ static ssize_t sai_write(struct file *file, const char __user *user_buf,
 {
     pr_info("sai_char: write requested (count=%zu)\n", count);
 
+    /* Acquire lock */
+    mutex_lock(&sai_mutex);
+
     if (count > BUF_SIZE)
         count = BUF_SIZE;
 
@@ -46,6 +51,10 @@ static ssize_t sai_write(struct file *file, const char __user *user_buf,
     *ppos = 0;              // reset offset after write
 
     pr_info("sai_char: stored %zu bytes\n", data_size);
+
+    /* Release lock */
+    mutex_unlock(&sai_mutex);
+
     return count;
 }
 
@@ -58,6 +67,9 @@ static ssize_t sai_read(struct file *file, char __user *user_buf,
 
     pr_info("sai_char: read requested (ppos=%lld, count=%zu)\n",
             (long long)*ppos, count);
+
+    /* Acquire lock */
+    mutex_lock(&sai_mutex);
 
     /* No more data left to read (EOF) */
     if (*ppos >= data_size)
@@ -74,6 +86,8 @@ static ssize_t sai_read(struct file *file, char __user *user_buf,
     pr_info("sai_char: sent %zu bytes, new ppos=%lld\n",
             to_copy, (long long)*ppos);
 
+    /* Release lock */
+    mutex_unlock(&sai_mutex);
     return to_copy;
 }
 
