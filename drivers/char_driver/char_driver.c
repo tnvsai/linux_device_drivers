@@ -2,6 +2,7 @@
 #include <linux/fs.h>
 #include <linux/uaccess.h>
 #include <linux/cdev.h>
+#include <linux/device.h>
 
 #define DEVICE_NAME "sai_char"
 #define BUF_SIZE    256
@@ -10,6 +11,10 @@ static char kernel_buffer[BUF_SIZE];
 static size_t data_size = 0;          // how many bytes are stored
 static dev_t dev_num;
 static struct cdev sai_cdev;
+
+static struct class *sai_class;
+static struct device *sai_device;
+
 
 /* OPEN */
 static int sai_open(struct inode *inode, struct file *file)
@@ -84,29 +89,58 @@ static struct file_operations fops = {
 /* INIT */
 static int __init sai_init(void)
 {
-    if (alloc_chrdev_region(&dev_num, 0, 1, DEVICE_NAME) < 0)
-        return -1;
+    int ret;
+
+    /* Allocate major/minor number */
+    ret = alloc_chrdev_region(&dev_num, 0, 1, DEVICE_NAME);
+    if (ret < 0)
+        return ret;
 
     pr_info("sai_char: registered with major %d minor %d\n",
             MAJOR(dev_num), MINOR(dev_num));
 
+    /* Initialize cdev */
     cdev_init(&sai_cdev, &fops);
 
-    if (cdev_add(&sai_cdev, dev_num, 1) < 0) {
+    ret = cdev_add(&sai_cdev, dev_num, 1);
+    if (ret < 0) {
         unregister_chrdev_region(dev_num, 1);
-        return -1;
+        return ret;
+    }
+
+    /* Create device class (NEW API: only one argument) */
+    sai_class = class_create(DEVICE_NAME);
+    if (IS_ERR(sai_class)) {
+        cdev_del(&sai_cdev);
+        unregister_chrdev_region(dev_num, 1);
+        return PTR_ERR(sai_class);
+    }
+
+    /* Create device node automatically in /dev */
+    sai_device = device_create(sai_class, NULL, dev_num, NULL, DEVICE_NAME);
+    if (IS_ERR(sai_device)) {
+        class_destroy(sai_class);
+        cdev_del(&sai_cdev);
+        unregister_chrdev_region(dev_num, 1);
+        return PTR_ERR(sai_device);
     }
 
     return 0;
 }
 
+
 /* EXIT */
 static void __exit sai_exit(void)
 {
+    device_destroy(sai_class, dev_num);
+    class_destroy(sai_class);
+
     cdev_del(&sai_cdev);
     unregister_chrdev_region(dev_num, 1);
+
     pr_info("sai_char: unregistered\n");
 }
+
 
 module_init(sai_init);
 module_exit(sai_exit);
