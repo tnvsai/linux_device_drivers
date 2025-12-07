@@ -1,0 +1,19 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "brcm,bcm2835";
+
+    fragment@0 {
+        target-path = "/";
+        __overlay__ {
+
+            sai_led: sai-led {
+                compatible = "sai,my-led";
+                gpios = <&gpio 17 0>;
+                default-state = "on";
+                status = "okay";
+            };
+        };
+    };
+};
